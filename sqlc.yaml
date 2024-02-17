@@ -1,0 +1,14 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "./internal/repo/query"
+    schema: "./internal/repo/migration"
+    gen:
+      go:
+        package: "gen"
+        out: "./internal/repo/gen"
+        emit_json_tags: true
+        emit_interface: true
+        emit_db_tags: true
+        emit_prepared_queries: true
+
