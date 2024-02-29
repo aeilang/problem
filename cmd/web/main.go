@@ -1,51 +1,52 @@
 package main
 
 import (
-	"net/http"
-	"time"
+	"os"
 
-	"github.com/a-h/templ"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
-	"github.com/lang/problem/internal/view/temp"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/lang/problem/internal/handler"
+	"github.com/lang/problem/internal/repo"
+	"github.com/lang/problem/internal/repo/gen"
+	"github.com/lang/problem/internal/service"
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	// mux := http.NewServeMux()
-	// mux.HandleFunc("/home", func(w http.ResponseWriter, r *http.Request) {
-	// 	tem := temp.Index()
-	// 	tem.Render(r.Context(), w)
-	// })
-
-	// mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-	// 	tem := temp.Login()
-	// 	tem.Render(r.Context(), w)
-	// })
-	// http.ListenAndServe(":8888", mux)
 	app := echo.New()
-	app.GET("/", func(c echo.Context) error {
-		tem := temp.Index()
-		return ServeTemp(c, tem)
-	})
-	app.GET("/login", func(c echo.Context) error {
-		tem := temp.Login()
-		return ServeTemp(c, tem)
-	})
-	app.POST("/login", func(c echo.Context) error {
-		email := c.FormValue("email")
-		password := c.FormValue("password")
-		cookie := new(http.Cookie)
-		cookie.Name = "token"
-		cookie.Value = email + password
-		cookie.Expires = time.Now().Add(24 * time.Second)
-		c.SetCookie(cookie)
-		tem := temp.Nav()
-		return ServeTemp(c, tem)
-	})
+	dbString := LoadConfig()
+	srv := Prepare(dbString)
+	app.Use(middleware.Logger())
+	app.Use(middleware.Recover())
+
+	app.GET("/", srv.Index)
+	app.GET("/login", srv.LoginPage)
+	app.POST("/login", srv.LoginLogic)
+	app.GET("/signup", srv.SignUpPage)
+	app.POST("/signup", srv.SignUpLogic)
+
+	app.GET("/afterlogin", srv.AfterLogin, handler.Auth)
+	app.GET("/create", srv.CreatePage, handler.Auth)
+	app.POST("/create", srv.CreateProblem, handler.Auth)
+	app.DELETE("/delete/:id", srv.Delete, handler.Auth)
 
 	app.Logger.Fatal(app.Start(":8888"))
 }
 
-func ServeTemp(c echo.Context, tem templ.Component) error {
-	return tem.Render(c.Request().Context(), c.Response().Writer)
+func LoadConfig() string {
+	err := godotenv.Load()
+	if err != nil {
+		panic("failed to load .env file")
+	}
+	dbString := os.Getenv("POSTGRES")
+	return dbString
+}
+
+func Prepare(dbString string) *handler.Handler {
+	db := repo.NewDB(dbString)
+	querys := gen.New(db)
+	serv := service.NewService(querys)
+	srv := handler.NewHandler(serv)
+	return &srv
 }

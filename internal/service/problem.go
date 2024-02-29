@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/lang/problem/internal/repo/gen"
 )
 
@@ -14,6 +15,7 @@ type Servicer interface {
 	GetProblemsById(ctx context.Context, id int32) (gen.Problem, error)
 	CheckEmail(ctx context.Context, email string) (gen.User, error)
 	UpdateProblem(ctx context.Context, arg gen.UpdateProblemParams) (gen.UpdateProblemRow, error)
+	GetProblemsByCreatedBy(ctx context.Context, created uuid.UUID) ([]gen.Problem, error)
 }
 
 var _ Servicer = (*Service)(nil)
@@ -34,6 +36,10 @@ func (s *Service) CreateProblem(ctx context.Context, arg gen.CreateProblemParams
 
 func (s *Service) GetAllProblems(ctx context.Context) ([]gen.Problem, error) {
 	return s.repo.GetAllProblems(ctx)
+}
+
+func (s *Service) GetProblemsByCreatedBy(ctx context.Context, created uuid.UUID) ([]gen.Problem, error) {
+	return s.repo.GetProblemsByCreated_by(ctx, created)
 }
 
 func (s *Service) GetProblemsById(ctx context.Context, id int32) (gen.Problem, error) {

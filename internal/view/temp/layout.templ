@@ -1,5 +1,10 @@
 package temp
 
+import (
+	"strconv"
+	"github.com/lang/problem/internal/repo/gen"
+)
+
 templ Layout() {
 	<!DOCTYPE html>
 	<html lang="en">
@@ -17,11 +22,13 @@ templ Layout() {
 	</html>
 }
 
-templ Nav() {
+templ Nav(name string) {
 	<div class="navbar bg-base-100">
 		<div class="flex-1">
-			<a class="btn btn-ghost text-xl">daisyUI</a>
+			<a class="btn btn-ghost text-xl">TodoApp</a>
 		</div>
+		<button class="btn" hx-get="/create" hx-target="#body">Add</button>
+		<div>hello { name }</div>
 		<div class="flex-none">
 			<ul class="menu menu-horizontal px-1">
 				<button class="btn" hx-get="/login" hx-target="#body">Login</button>
@@ -29,6 +36,7 @@ templ Nav() {
 			</ul>
 		</div>
 	</div>
+	{ children... }
 }
 
 templ Login() {
@@ -36,7 +44,7 @@ templ Login() {
 		<div class="hero-content flex-col lg:flex-row-reverse">
 			<div class="text-center lg:text-left">
 				<h1 class="text-5xl font-bold">Login now!</h1>
-				<p class="py-6">Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem quasi. In deleniti eaque aut repudiandae et a id nisi.</p>
+				<p class="py-6">Todo App!</p>
 			</div>
 			<div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
 				<form class="card-body">
@@ -52,7 +60,7 @@ templ Login() {
 						</label>
 						<input type="password" name="password" placeholder="password" class="input input-bordered" required/>
 						<label class="label">
-							<a href="#" class="label-text-alt link link-hover">Forgot password?</a>
+							<a class="label-text-alt link link-hover" hx-get="/signup" hx-target="#body">don't have a accont?</a>
 						</label>
 					</div>
 					<div class="form-control mt-6">
@@ -64,48 +72,92 @@ templ Login() {
 	</div>
 }
 
-templ Table() {
+templ SignUp() {
+	<div class="hero min-h-screen bg-base-200">
+		<div class="hero-content flex-col lg:flex-row-reverse">
+			<div class="text-center lg:text-left">
+				<h1 class="text-5xl font-bold">SignUp now!</h1>
+				<p class="py-6">Todo App!</p>
+			</div>
+			<div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
+				<form class="card-body">
+					<div class="form-control">
+						<label class="label">
+							<span class="label-text">Email</span>
+						</label>
+						<input type="email" name="email" placeholder="email" class="input input-bordered" required/>
+					</div>
+					<div class="form-control">
+						<label class="label">
+							<span class="label-text">Password</span>
+						</label>
+						<input type="password" name="password" placeholder="password" class="input input-bordered" required/>
+					</div>
+					<div class="form-control mt-6">
+						<button class="btn btn-primary" hx-post="/signup" hx-target="#body">Signup </button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+}
+
+templ Table(data []gen.Problem) {
 	<div class="overflow-x-auto">
 		<table class="table table-zebra">
 			<!-- head -->
 			<thead>
 				<tr>
-					<th></th>
-					<th>Name</th>
-					<th>Job</th>
-					<th>Favorite Color</th>
+					<th>ID</th>
+					<th>Title</th>
+					<th>Desciption</th>
+					<th>Delete?</th>
 				</tr>
 			</thead>
 			<tbody>
-				<!-- row 1 -->
-				<tr>
-					<th>1</th>
-					<td>Cy Ganderton</td>
-					<td>Quality Control Specialist</td>
-					<td>Blue</td>
-				</tr>
-				<!-- row 2 -->
-				<tr>
-					<th>2</th>
-					<td>Hart Hagerty</td>
-					<td>Desktop Support Technician</td>
-					<td>Purple</td>
-				</tr>
-				<!-- row 3 -->
-				<tr>
-					<th>3</th>
-					<td>Brice Swyre</td>
-					<td>Tax Accountant</td>
-					<td>Red</td>
-				</tr>
+				for i, item := range data {
+					<tr>
+						<th>{ strconv.Itoa(i+1) }</th>
+						<td>{ item.Title }</td>
+						<td>{ item.Description }</td>
+						<td><button class="btn btn-error" hx-delete={ "/delete/" + strconv.Itoa(int(item.ID)) } hx-target="#body" hx-confirm="Are you sure you wish to delete your account?">Delete</button></td>
+					</tr>
+				}
 			</tbody>
 		</table>
 	</div>
 }
 
+templ CreatePage() {
+	<div>
+		<form class="card-body">
+			<div class="form-control">
+				<label class="label">
+					<span class="label-text">Title</span>
+				</label>
+				<input name="title" placeholder="title" class="input input-bordered" required/>
+			</div>
+			<div class="form-control">
+				<label class="label">
+					<span class="label-text">Description</span>
+				</label>
+				<textarea name="description" class="textarea textarea-bordered" placeholder="description" required></textarea>
+			</div>
+			<div class="form-control mt-6">
+				<button class="btn btn-primary" hx-post="/create" hx-target="#body">Add </button>
+			</div>
+		</form>
+	</div>
+}
+
 templ Index() {
 	@Layout() {
-		@Nav()
-		@Table()
+		@Login()
+	}
+}
+
+templ AfterLogin(name string, data []gen.Problem) {
+	@Nav(name) {
+		@Table(data)
 	}
 }
