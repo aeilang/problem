@@ -8,10 +8,10 @@
 
 a simple curd todo app that implement authentication throught jwt.
 
-![img](./assert/login.png "Login")
+![Login](./assert/login.PNG)
 
-![signup](./assert/signup.png)
+![signup](./assert/signup.PNG)
 
-![main](./assert/main.png)
+![main](./assert/main.PNG)
 
-![add]()
+![add](./assert//add.PNG)
