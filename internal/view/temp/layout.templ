@@ -3,6 +3,7 @@ package temp
 import (
 	"strconv"
 	"github.com/lang/problem/internal/repo/gen"
+	"fmt"
 )
 
 templ Layout() {
@@ -32,7 +33,7 @@ templ Nav(name string) {
 		<div class="flex-none">
 			<ul class="menu menu-horizontal px-1">
 				<button class="btn" hx-get="/login" hx-target="#body">Login</button>
-				<button class="btn">Logout</button>
+				<button class="btn" hx-get="/logout" hx-target="#body">Logout</button>
 			</ul>
 		</div>
 	</div>
@@ -110,7 +111,7 @@ templ Table(data []gen.Problem) {
 				<tr>
 					<th>ID</th>
 					<th>Title</th>
-					<th>Desciption</th>
+					<th>Description</th>
 					<th>Delete?</th>
 				</tr>
 			</thead>
@@ -120,7 +121,12 @@ templ Table(data []gen.Problem) {
 						<th>{ strconv.Itoa(i+1) }</th>
 						<td>{ item.Title }</td>
 						<td>{ item.Description }</td>
-						<td><button class="btn btn-error" hx-delete={ "/delete/" + strconv.Itoa(int(item.ID)) } hx-target="#body" hx-confirm="Are you sure you wish to delete your account?">Delete</button></td>
+						<td>
+							<div class="flex">
+								<button class="btn btn-error" hx-delete={ "/delete/" + strconv.Itoa(int(item.ID)) } hx-target="#body" hx-confirm="Are you sure you wish to delete your account?">Delete</button>
+								<button class="btn btn-info" hx-get={ "/update" + fmt.Sprintf("?id=%d&title=%s&description=%s", item.ID, item.Title, item.Description) } hx-target="#body">Update</button>
+							</div>
+						</td>
 					</tr>
 				}
 			</tbody>
@@ -150,6 +156,34 @@ templ CreatePage() {
 	</div>
 }
 
+templ UpdatePage(id, title, description string) {
+	<div>
+		<form class="card-body">
+			<div class="form-control">
+				<label class="label">
+					<span class="label-text">ID</span>
+				</label>
+				<input name="id" type="disable" value={ id } class="input input-bordered" required/>
+			</div>
+			<div class="form-control">
+				<label class="label">
+					<span class="label-text">Title</span>
+				</label>
+				<input name="title" value={ title } class="input input-bordered" required/>
+			</div>
+			<div class="form-control">
+				<label class="label">
+					<span class="label-text">Description</span>
+				</label>
+				<textarea name="description" class="textarea textarea-bordered" required>{ description }</textarea>
+			</div>
+			<div class="form-control mt-6">
+				<button class="btn btn-primary" hx-put="/update" hx-target="#body">Update </button>
+			</div>
+		</form>
+	</div>
+}
+
 templ Index() {
 	@Layout() {
 		@Login()
@@ -159,5 +193,13 @@ templ Index() {
 templ AfterLogin(name string, data []gen.Problem) {
 	@Nav(name) {
 		@Table(data)
+	}
+}
+
+templ IndexAuth(name string, data []gen.Problem) {
+	@Layout() {
+		@Nav(name) {
+			@Table(data)
+		}
 	}
 }

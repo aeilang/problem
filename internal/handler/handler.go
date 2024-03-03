@@ -25,9 +25,38 @@ func NewHandler(serv service.Servicer) Handler {
 	}
 }
 
-func (h *Handler) Index(c echo.Context) error {
+func (h *Handler) Logout(c echo.Context) error {
+	c.SetCookie(&http.Cookie{
+		Name:   "token",
+		MaxAge: -1,
+	})
 	teml := temp.Index()
 	return ServeTemp(c, teml)
+}
+
+func (h *Handler) Index(c echo.Context) error {
+	teml := temp.Index()
+	cookie, err := c.Cookie("token")
+	if err != nil {
+		return ServeTemp(c, teml)
+	}
+
+	email, err := tool.VerifyToken(cookie.Value)
+	if err != nil {
+		return ServeTemp(c, teml)
+	}
+	c.Set("email", email)
+
+	u, err := h.serv.CheckEmail(c.Request().Context(), email)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	data, err := h.serv.GetProblemsByCreatedBy(c.Request().Context(), u.ID)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	tem := temp.IndexAuth(email, data)
+	return ServeTemp(c, tem)
 }
 
 func (h *Handler) LoginPage(c echo.Context) error {
@@ -61,6 +90,9 @@ func (h *Handler) AfterLogin(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 	data, err := h.serv.GetProblemsByCreatedBy(c.Request().Context(), u.ID)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
 	tem := temp.AfterLogin(email, data)
 	return ServeTemp(c, tem)
 }
@@ -156,6 +188,38 @@ func (h *Handler) Delete(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
+	return h.AfterLogin(c)
+}
+
+func (h *Handler) UpdatePage(c echo.Context) error {
+	id := c.QueryParam("id")
+	title := c.QueryParam("title")
+	description := c.QueryParam("description")
+
+	tem := temp.UpdatePage(id, title, description)
+	return ServeTemp(c, tem)
+}
+
+func (h *Handler) UpdateLogic(c echo.Context) error {
+	id := c.FormValue("id")
+	id2, _ := strconv.Atoi(id)
+	title := c.FormValue("title")
+	description := c.FormValue("description")
+	email := c.Get("email").(string)
+	u, err := h.serv.CheckEmail(c.Request().Context(), email)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	_, err = h.serv.UpdateProblem(c.Request().Context(), gen.UpdateProblemParams{
+		Title:       title,
+		ID:          int32(id2),
+		Description: description,
+		CreatedBy:   u.ID,
+	})
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
 	return h.AfterLogin(c)
 }
 

@@ -31,6 +31,10 @@ func main() {
 	app.POST("/create", srv.CreateProblem, handler.Auth)
 	app.DELETE("/delete/:id", srv.Delete, handler.Auth)
 
+	app.GET("/update", srv.UpdatePage, handler.Auth)
+	app.PUT("/update", srv.UpdateLogic, handler.Auth)
+	app.GET("/logout", srv.Logout, handler.Auth)
+
 	app.Logger.Fatal(app.Start(":8888"))
 }
 
